@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
-Name=sysglance
+Name=LibreStatistics
 GenericName=System Monitor
 Comment=See how busy your processor, memory and graphics are
-Exec=sysglance
-Icon=sysglance
+Exec=librestatistics
+Icon=${SNAP}/meta/gui/librestatistics.svg
 Terminal=true
 Categories=System;Monitor;Utility;
 Keywords=cpu;memory;ram;gpu;monitor;usage;

@@ -1,4 +1,5 @@
-"""`python -m sysglance [friendly|dev|classic] [options]`"""
+# SPDX-License-Identifier: GPL-2.0-or-later
+"""`python -m librestatistics [friendly|dev|classic] [options]`"""
 
 import sys
 
@@ -10,11 +11,11 @@ def main():
     if len(sys.argv) > 1 and sys.argv[1] in EDITIONS:
         edition = sys.argv.pop(1)
     if edition == "dev":
-        from sysglance.dev import main as run
+        from librestatistics.dev import main as run
     elif edition == "classic":
-        from sysglance.classic import main as run
+        from librestatistics.classic import main as run
     else:
-        from sysglance.friendly import main as run
+        from librestatistics.friendly import main as run
     run()
 
 

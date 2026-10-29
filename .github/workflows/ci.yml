@@ -26,11 +26,11 @@ jobs:
       - run: python -m pip install .
       - name: Render every edition once
         run: |
-          sysglance --once
-          sysglance-dev --once
-          sysglance-classic --once
-          sysglance-dev --json
-          python -m sysglance classic --once
+          librestatistics --once
+          librestatistics-dev --once
+          librestatistics-classic --once
+          librestatistics-dev --json
+          python -m librestatistics classic --once
 
   packaging:
     runs-on: ubuntu-latest
@@ -41,9 +41,9 @@ jobs:
           python3 -c "import yaml; yaml.safe_load(open('snap/snapcraft.yaml'))"
           python3 - <<'EOF'
           import re
-          ver = re.search(r'__version__ = "(.*)"', open("src/sysglance/__init__.py").read())[1]
+          ver = re.search(r'__version__ = "(.*)"', open("src/librestatistics/__init__.py").read())[1]
           snap = re.search(r"^version: '(.*)'", open("snap/snapcraft.yaml").read(), re.M)[1]
-          deb = re.match(r"sysglance \((.*?)\)", open("debian/changelog").read())[1]
+          deb = re.match(r"librestatistics \((.*?)\)", open("debian/changelog").read())[1]
           assert ver == snap == deb, f"version mismatch: package {ver}, snap {snap}, debian {deb}"
           print("versions agree:", ver)
           EOF

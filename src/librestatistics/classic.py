@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""sysglance classic (v1.0) — a clean live terminal dashboard for CPU, RAM and GPU usage.
+# SPDX-License-Identifier: GPL-2.0-or-later
+"""librestatistics classic (v1.0) — a clean live terminal dashboard for CPU, RAM and GPU usage.
 
 Usage:
-    sysglance-classic              # live dashboard (Ctrl+C to quit)
-    sysglance-classic -i 0.5       # refresh every 0.5 s
-    sysglance-classic --once       # print a single snapshot and exit
+    librestatistics-classic              # live dashboard (Ctrl+C to quit)
+    librestatistics-classic -i 0.5       # refresh every 0.5 s
+    librestatistics-classic --once       # print a single snapshot and exit
 
 GPU support:
     NVIDIA  via nvidia-smi
@@ -30,7 +31,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from sysglance import _compat
+from librestatistics import _compat
 
 HISTORY = 50
 SPARK = "▁▂▃▄▅▆▇█"
@@ -331,7 +332,7 @@ class Monitor:
         up = datetime.now() - boot
         h, rem = divmod(int(up.total_seconds()), 3600)
         t = Text()
-        t.append(" sysglance classic ", style="bold black on cyan")
+        t.append(" LibreStatistics classic ", style="bold black on cyan")
         t.append(f"  {_compat.hostname()}", style="bold")
         t.append(f"  ·  up {h // 24}d {h % 24}h {rem // 60}m", style="grey62")
         la = _compat.loadavg()

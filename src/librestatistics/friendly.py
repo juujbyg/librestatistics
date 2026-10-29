@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""sysglance (friendly edition) — a friendly, at-a-glance view of how your computer is doing.
+# SPDX-License-Identifier: GPL-2.0-or-later
+"""librestatistics (friendly edition) — a friendly, at-a-glance view of how your computer is doing.
 
 Usage:
-    sysglance              # live view (press Ctrl+C to close)
-    sysglance -i 2         # update every 2 seconds
-    sysglance --once       # show a single snapshot and exit
+    librestatistics              # live view (press Ctrl+C to close)
+    librestatistics -i 2         # update every 2 seconds
+    librestatistics --once       # show a single snapshot and exit
 
-See also: sysglance-dev (developer edition) and sysglance-classic (v1.0).
+See also: librestatistics-dev (developer edition) and librestatistics-classic (v1.0).
 """
 
 import argparse
@@ -26,8 +27,8 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from sysglance import __version__ as VERSION
-from sysglance import _compat
+from librestatistics import __version__ as VERSION
+from librestatistics import _compat
 HISTORY = 40
 
 
@@ -492,7 +493,7 @@ class Dashboard:
         g = Table.grid(expand=True)
         g.add_column()
         g.add_column(justify="right")
-        left = Text(" sysglance ", style="bold #111827 on #7dd3fc")
+        left = Text(" LibreStatistics ", style="bold #111827 on #7dd3fc")
         left.append("  ●  ", style=color)
         left.append(msg, style=f"bold {color}")
         g.add_row(left, Text(f"{datetime.now():%A %H:%M}", style=SOFT))

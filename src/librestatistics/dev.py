@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""sysglance dev — developer-oriented live system monitor (TUI).
+# SPDX-License-Identifier: GPL-2.0-or-later
+"""librestatistics dev — developer-oriented live system monitor (TUI).
 
 Usage:
-    sysglance-dev                 # live dashboard
-    sysglance-dev -i 0.5          # refresh every 0.5 s
-    sysglance-dev --once          # print a single snapshot and exit
-    sysglance-dev --json          # emit one JSON sample and exit
-    sysglance-dev --log FILE            # append NDJSON samples while running
+    librestatistics-dev                 # live dashboard
+    librestatistics-dev -i 0.5          # refresh every 0.5 s
+    librestatistics-dev --once          # print a single snapshot and exit
+    librestatistics-dev --json          # emit one JSON sample and exit
+    librestatistics-dev --log FILE            # append NDJSON samples while running
 
 Keys:  c/m/p/i/t sort by cpu/mem/pid/io/threads   r reverse   / filter (Enter ok, Esc clear)
        T tree toggle   j/k or arrows scroll   space pause   +/- interval   q quit
@@ -36,8 +37,8 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from sysglance import _compat
-from sysglance._compat import IS_WIN
+from librestatistics import _compat
+from librestatistics._compat import IS_WIN
 
 try:  # Windows console input (imported at module level so freezers see it)
     import msvcrt
@@ -1083,7 +1084,7 @@ def proc_panel(s, ui, width, height):
 
 def header_line(s, ui, width):
     sy = s["sys"]
-    t = T((" sysglance-dev ", "bold black on cyan"), (" ", ""), (trunc(sy["host"], 22), "bold"))
+    t = T((" librestatistics-dev ", "bold black on cyan"), (" ", ""), (trunc(sy["host"], 22), "bold"))
     clock = f" {time.strftime('%H:%M:%S')}"
     extras = [
         (f" {sy['kernel']}", C_LABEL),

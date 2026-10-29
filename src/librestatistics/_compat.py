@@ -1,4 +1,5 @@
-"""Platform helpers shared by the sysglance editions (Linux + Windows).
+# SPDX-License-Identifier: GPL-2.0-or-later
+"""Platform helpers shared by the librestatistics editions (Linux + Windows).
 
 Everything here degrades to "no data" instead of raising.  Only psutil and the
 standard library are used (ctypes/winreg for the Windows GPU backend).

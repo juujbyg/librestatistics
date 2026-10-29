@@ -1,21 +1,21 @@
-; Inno Setup script: installs the three sysglance editions, adds them to PATH
+; Inno Setup script: installs the three librestatistics editions, adds them to PATH
 ; and creates Start-menu shortcuts. Built by packaging/windows/build.ps1.
 #ifndef AppVersion
   #define AppVersion "0.0.0"
 #endif
 
 [Setup]
-AppId={{6B0E2F4C-5E8A-4E8B-9C3B-1F1D5A7C2E90}
-AppName=sysglance
+AppId={{399B8D3E-84B1-4FA4-821F-B30BA4740145}
+AppName=LibreStatistics
 AppVersion={#AppVersion}
-AppPublisher=juujbyg
-AppPublisherURL=https://github.com/juujbyg/sysglance
-DefaultDirName={autopf}\sysglance
-DefaultGroupName=sysglance
+AppPublisher=LibreProject
+AppPublisherURL=https://github.com/LibreProject/librestatistics
+DefaultDirName={autopf}\librestatistics
+DefaultGroupName=LibreStatistics
 DisableProgramGroupPage=yes
 LicenseFile=..\..\LICENSE
 OutputDir=..\..\dist\windows
-OutputBaseFilename=sysglance-{#AppVersion}-windows-x64-setup
+OutputBaseFilename=librestatistics-{#AppVersion}-windows-x64-setup
 Compression=lzma2
 SolidCompression=yes
 ArchitecturesAllowed=x64compatible
@@ -25,19 +25,19 @@ ChangesEnvironment=yes
 WizardStyle=modern
 
 [Files]
-Source: "..\..\dist\windows\sysglance.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\..\dist\windows\sysglance-dev.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\..\dist\windows\sysglance-classic.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\dist\windows\librestatistics.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\dist\windows\librestatistics-dev.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\dist\windows\librestatistics-classic.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"
 
 [Icons]
-Name: "{group}\sysglance"; Filename: "{app}\sysglance.exe"
-Name: "{group}\sysglance (developer)"; Filename: "{app}\sysglance-dev.exe"
-Name: "{group}\sysglance classic"; Filename: "{app}\sysglance-classic.exe"
-Name: "{group}\Uninstall sysglance"; Filename: "{uninstallexe}"
+Name: "{group}\LibreStatistics"; Filename: "{app}\librestatistics.exe"
+Name: "{group}\LibreStatistics (developer)"; Filename: "{app}\librestatistics-dev.exe"
+Name: "{group}\LibreStatistics classic"; Filename: "{app}\librestatistics-classic.exe"
+Name: "{group}\Uninstall LibreStatistics"; Filename: "{uninstallexe}"
 
 [Tasks]
-Name: "addtopath"; Description: "Add sysglance commands to PATH"; Flags: checkedonce
+Name: "addtopath"; Description: "Add LibreStatistics commands to PATH"; Flags: checkedonce
 
 [Registry]
 ; Per-user install writes HKCU, admin install writes HKLM (HKA picks the right one).

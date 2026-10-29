@@ -1,3 +1,4 @@
-from sysglance.dev import main
+# SPDX-License-Identifier: GPL-2.0-or-later
+from librestatistics.dev import main
 
 main()

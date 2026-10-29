@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-or-later
 """Set the release version everywhere it is recorded.
 
     python3 scripts/bump_version.py 2.1.0 "Short note for the Debian changelog"
 
-Updates src/sysglance/__init__.py, snap/snapcraft.yaml and debian/changelog.
+Updates src/librestatistics/__init__.py, snap/snapcraft.yaml and debian/changelog.
 The Windows installer and Python packages read the version from the package.
 Then: git commit -am "Release 2.1.0" && git tag v2.1.0 && git push --follow-tags
 """
@@ -15,7 +16,7 @@ from email.utils import formatdate
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-MAINTAINER = "juujbyg <juujbyg@users.noreply.github.com>"
+MAINTAINER = "LibreStatistics contributors <147175691+juujbyg@users.noreply.github.com>"
 
 
 def sub(path, pattern, repl):
@@ -32,11 +33,11 @@ def main():
     version = sys.argv[1]
     note = sys.argv[2] if len(sys.argv) > 2 else f"Release {version}."
 
-    sub("src/sysglance/__init__.py", r'^__version__ = ".*"$', f'__version__ = "{version}"')
+    sub("src/librestatistics/__init__.py", r'^__version__ = ".*"$', f'__version__ = "{version}"')
     sub("snap/snapcraft.yaml", r"^version: .*$", f"version: '{version}'")
 
     changelog = ROOT / "debian/changelog"
-    entry = (f"sysglance ({version}) unstable; urgency=medium\n\n  * {note}\n\n"
+    entry = (f"librestatistics ({version}) unstable; urgency=medium\n\n  * {note}\n\n"
              f" -- {MAINTAINER}  {formatdate(localtime=True)}\n\n")
     changelog.write_text(entry + changelog.read_text())
 

@@ -1,0 +1,47 @@
+name: Something looks wrong
+description: A number is missing or wrong, or an edition crashes
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please run the command below on the affected machine and paste its output.
+  - type: dropdown
+    id: edition
+    attributes:
+      label: Edition
+      options:
+        - Friendly (librestatistics)
+        - Developer (librestatistics-dev)
+        - Classic (librestatistics-classic)
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system and version
+      description: For example "Ubuntu 24.04" or "Windows 11 23H2".
+    validations:
+      required: true
+  - type: input
+    id: install
+    attributes:
+      label: How you installed it
+      description: snap, apt, pip/pipx, Windows installer, or from source.
+    validations:
+      required: true
+  - type: textarea
+    id: json
+    attributes:
+      label: Output of `librestatistics-dev --json`
+      render: json
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true

@@ -1,12 +1,18 @@
-# sysglance
+# LibreStatistics
+
+[![CI](https://github.com/LibreProject/librestatistics/actions/workflows/ci.yml/badge.svg)](https://github.com/LibreProject/librestatistics/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/LibreProject/librestatistics)](https://github.com/LibreProject/librestatistics/releases/latest)
+[![License: GPL-2.0-or-later](https://img.shields.io/badge/license-GPL--2.0--or--later-blue)](LICENSE)
+
+Part of the **LibreProject** family (alongside LibrePrint).
 
 Live **CPU, memory and GPU** dashboards for the terminal, in three editions for different people:
 
 | Edition | Command | For |
 |---|---|---|
-| **Friendly** | `sysglance` | Anyone. Plain language, big numbers, apps grouped by name, helpful tips. |
-| **Developer** | `sysglance-dev` | Developers. Dense raw metrics, per-core breakdown, disk, network and pressure stats, sortable process table, JSON export. |
-| **Classic** (v1.0) | `sysglance-classic` | The original. A clean, simple overview. |
+| **Friendly** | `librestatistics` | Anyone. Plain language, big numbers, apps grouped by name, helpful tips. |
+| **Developer** | `librestatistics-dev` | Developers. Dense raw metrics, per-core breakdown, disk, network and pressure stats, sortable process table, JSON export. |
+| **Classic** (v1.0) | `librestatistics-classic` | The original. A clean, simple overview. |
 
 Runs on **Linux** and **Windows**.
 
@@ -16,46 +22,46 @@ All channels install all three commands.
 
 ### Snap (Ubuntu and other Linux)
 ```bash
-sudo snap install sysglance
+sudo snap install librestatistics
 # allow it to read system statistics (once):
-for i in system-observe hardware-observe mount-observe network-observe; do sudo snap connect sysglance:$i; done
+for i in system-observe hardware-observe mount-observe network-observe; do sudo snap connect librestatistics:$i; done
 ```
-Snap commands are `sysglance`, `sysglance.dev` and `sysglance.classic`.
+Snap commands are `librestatistics`, `librestatistics.dev` and `librestatistics.classic`.
 
 ### apt (Debian / Ubuntu)
 ```bash
-sudo curl -fsSLo /usr/share/keyrings/sysglance.gpg https://juujbyg.github.io/sysglance/apt/sysglance.gpg
-echo "deb [signed-by=/usr/share/keyrings/sysglance.gpg] https://juujbyg.github.io/sysglance/apt stable main" \
-  | sudo tee /etc/apt/sources.list.d/sysglance.list
-sudo apt update && sudo apt install sysglance
+sudo curl -fsSLo /usr/share/keyrings/librestatistics.gpg https://libreproject.github.io/librestatistics/apt/librestatistics.gpg
+echo "deb [signed-by=/usr/share/keyrings/librestatistics.gpg] https://libreproject.github.io/librestatistics/apt stable main" \
+  | sudo tee /etc/apt/sources.list.d/librestatistics.list
+sudo apt update && sudo apt install librestatistics
 ```
-Or download `sysglance_*_all.deb` from [Releases](https://github.com/juujbyg/sysglance/releases) and run `sudo apt install ./sysglance_*_all.deb`.
+Or download `librestatistics_*_all.deb` from [Releases](https://github.com/LibreProject/librestatistics/releases) and run `sudo apt install ./librestatistics_*_all.deb`.
 
 ### Windows
-Download from [Releases](https://github.com/juujbyg/sysglance/releases):
-- **`sysglance-*-windows-x64-setup.exe`**: installer with Start-menu shortcuts that adds the commands to PATH.
-- **`sysglance-*-windows-x64.zip`**: portable `.exe` files, no install needed.
+Download from [Releases](https://github.com/LibreProject/librestatistics/releases):
+- **`librestatistics-*-windows-x64-setup.exe`**: installer with Start-menu shortcuts that adds the commands to PATH.
+- **`librestatistics-*-windows-x64.zip`**: portable `.exe` files, no install needed.
 
 Run them in Windows Terminal for the best look. The files aren't code-signed, so SmartScreen may ask you to confirm the first time.
 
 ### pip (any OS with Python 3.9+)
 ```bash
-pipx install sysglance        # or: pip install sysglance
-pipx install git+https://github.com/juujbyg/sysglance   # latest from GitHub
+pipx install librestatistics        # or: pip install librestatistics
+pipx install git+https://github.com/LibreProject/librestatistics   # latest from GitHub
 ```
 
 ### From source
 ```bash
-git clone https://github.com/juujbyg/sysglance.git && cd sysglance
+git clone https://github.com/LibreProject/librestatistics.git && cd librestatistics
 pip install .
-python -m sysglance [friendly|dev|classic]
+python -m librestatistics [friendly|dev|classic]
 ```
 
 ## Usage
 
 Every edition accepts `-i SECONDS` (refresh interval) and `--once` (print one snapshot and exit).
 
-### Friendly: `sysglance`
+### Friendly: `librestatistics`
 
 - Status line in plain words, such as "Everything looks good" or "Memory is running low".
 - A card each for Processor, Memory and Graphics, with a big number, a word for how busy it is (Relaxed → Maxed out) and a short history graph.
@@ -63,7 +69,7 @@ Every edition accepts `-i SECONDS` (refresh interval) and `--once` (print one sn
 - **At a glance**: battery, disk space, internet speed, how long the computer has been on, and tips.
 
 ```
- sysglance   ●  Everything looks good                                                           Thursday 20:17
+ LibreStatistics   ●  Everything looks good                                                     Thursday 20:17
 ╭─ Processor ──────────────────────╮╭─ Memory ──────────────────────────╮╭─ Graphics ────────────────────────╮
 │                                  ││                                   ││                                   │
 │   ╻ ╻╺━┓                         ││   ╻ ╻╺━┓                          ││   ┏━┓                             │
@@ -95,7 +101,7 @@ Every edition accepts `-i SECONDS` (refresh interval) and `--once` (print one sn
  Updates every second  ·  press Ctrl+C to close  ·  v2.0.0
 ```
 
-### Developer: `sysglance-dev`
+### Developer: `librestatistics-dev`
 
 - Per-core stacked user/sys/iowait/irq/steal/nice, frequency and temperature. Context switches, interrupts and forks per second. Linux pressure stall (PSI) stats.
 - Full memory breakdown, swap in/out rate, page faults.
@@ -107,7 +113,7 @@ Every edition accepts `-i SECONDS` (refresh interval) and `--once` (print one sn
 **Keys:** `c`/`m`/`p`/`i`/`t` sort by cpu/mem/pid/io/threads · `r` reverse · `/` filter · `T` tree · `j`/`k` scroll · `space` pause · `+`/`-` interval · `q` quit
 
 ```
- sysglance-dev  my-laptop 7.0.0-38-generic up 6d06h29m load 5.22 3.15 2.73 (131%) run 2/1173 20:17:53
+ librestatistics-dev  my-laptop 7.0.0-38-generic up 6d06h29m load 5.22 3.15 2.73 (131%) run 2/1173 20:17:53
 ╭─  CPU 4T  ──────────────────────────────────────────────────────────────╮╭─  MEM  ───────────────────────────────────╮
 │ all █████·······  40.5% u35.0 s 5.3 w 0.0 q 0.2 t 0.0 n 0.0 2211M 58°   ││ RAM  █████▏·····  46.7% 5.2G/11.1G        │
 │ c0  █████·······  37.7% u32.8 s 4.9 w 0.0 q 0.0 t 0.0 n 0.0 2124M 58°   ││ SWAP ████▊······  43.7% 896M/2.0G         │
@@ -144,7 +150,7 @@ If no usage counters are readable, the friendly edition estimates GPU activity f
 ## Project layout
 
 ```
-src/sysglance/        the package: friendly.py, dev.py, classic.py
+src/librestatistics/  the package: friendly.py, dev.py, classic.py
 snap/                 snapcraft.yaml + desktop launchers
 debian/               Debian packaging for the .deb / apt repository
 packaging/windows/    PyInstaller build script + Inno Setup installer
@@ -156,6 +162,10 @@ scripts/              bump_version.py
 
 Releasing and publishing to each store: see [docs/RELEASING.md](docs/RELEASING.md).
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## License
 
-MIT
+GPL-2.0-or-later. See [LICENSE](LICENSE).

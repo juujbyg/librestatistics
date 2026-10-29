@@ -29,7 +29,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - id: v
         run: |
-          ver=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' src/sysglance/__init__.py)
+          ver=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' src/librestatistics/__init__.py)
           echo "version=$ver" >> "$GITHUB_OUTPUT"
           if [ "${GITHUB_REF_TYPE}" = tag ] && [ "${GITHUB_REF_NAME}" != "v$ver" ]; then
             echo "::error::tag ${GITHUB_REF_NAME} does not match package version $ver (run scripts/bump_version.py)"
@@ -61,14 +61,14 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             build-essential debhelper dh-python pybuild-plugin-pyproject python3-all python3-setuptools
           dpkg-buildpackage -us -uc -b
-          mkdir -p out && mv ../sysglance_*.deb out/
+          mkdir -p out && mv ../librestatistics_*.deb out/
       - name: Install and smoke test
         env:
           COLUMNS: "120"
           LINES: "35"
         run: |
-          sudo apt-get install -y ./out/sysglance_*.deb
-          sysglance --once && sysglance-dev --once && sysglance-classic --once
+          sudo apt-get install -y ./out/librestatistics_*.deb
+          librestatistics --once && librestatistics-dev --once && librestatistics-classic --once
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: deb
@@ -138,7 +138,7 @@ jobs:
           merge-multiple: true
       - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
-          name: sysglance ${{ needs.version.outputs.version }}
+          name: librestatistics ${{ needs.version.outputs.version }}
           generate_release_notes: true
           files: artifacts/*
 
@@ -186,5 +186,5 @@ jobs:
           fi
           packaging/apt/build-repo.sh site/apt "${{ steps.gpg.outputs.id }}" new/*.deb
           git -C site add -A
-          git -C site commit -m "apt: sysglance ${{ needs.version.outputs.version }}"
+          git -C site commit -m "apt: librestatistics ${{ needs.version.outputs.version }}"
           git -C site push origin gh-pages

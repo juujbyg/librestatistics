@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
-Name=sysglance (developer)
+Name=LibreStatistics (developer)
 GenericName=System Monitor
 Comment=Detailed CPU, memory, disk, network, GPU and process metrics
-Exec=sysglance-dev
-Icon=sysglance
+Exec=librestatistics-dev
+Icon=librestatistics
 Terminal=true
 Categories=System;Monitor;Development;
 Keywords=cpu;memory;gpu;process;htop;top;

@@ -1,6 +1,6 @@
-sysglance (2.0.0) unstable; urgency=medium
+librestatistics (2.0.0) unstable; urgency=medium
 
-  * Initial release with three editions: friendly (sysglance), developer
-    (sysglance-dev) and classic v1.0 (sysglance-classic).
+  * Initial release with three editions: friendly (librestatistics), developer
+    (librestatistics-dev) and classic v1.0 (librestatistics-classic).
 
- -- juujbyg <juujbyg@users.noreply.github.com>  Thu, 29 Oct 2026 20:12:59 +0100
+ -- LibreStatistics contributors <147175691+juujbyg@users.noreply.github.com>  Thu, 29 Oct 2026 20:12:59 +0100

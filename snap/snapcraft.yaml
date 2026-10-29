@@ -1,28 +1,28 @@
-name: sysglance
+name: librestatistics
 base: core24
 version: '2.0.0'
 summary: Live CPU, memory and GPU dashboards for the terminal
 description: |
-  sysglance shows how busy your computer is, live, in the terminal.
+  LibreStatistics shows how busy your computer is, live, in the terminal.
   It comes in three editions:
 
-  * sysglance          friendly edition: plain language, big numbers, apps
-                       grouped by name and helpful tips
-  * sysglance.dev      developer edition: per-core breakdown, disk, network,
-                       pressure stalls, GPU engines, sortable process table
-  * sysglance.classic  the original v1.0 overview
+  * librestatistics          friendly edition: plain language, big numbers, apps
+                             grouped by name and helpful tips
+  * librestatistics.dev      developer edition: per-core breakdown, disk, network,
+                             pressure stalls, GPU engines, sortable process table
+  * librestatistics.classic  the original v1.0 overview
 
   After installing, allow it to read system statistics:
 
-    sudo snap connect sysglance:system-observe
-    sudo snap connect sysglance:hardware-observe
-    sudo snap connect sysglance:mount-observe
-    sudo snap connect sysglance:network-observe
-license: MIT
-website: https://github.com/juujbyg/sysglance
-source-code: https://github.com/juujbyg/sysglance
-issues: https://github.com/juujbyg/sysglance/issues
-icon: snap/gui/sysglance.svg
+    sudo snap connect librestatistics:system-observe
+    sudo snap connect librestatistics:hardware-observe
+    sudo snap connect librestatistics:mount-observe
+    sudo snap connect librestatistics:network-observe
+license: GPL-2.0-or-later
+website: https://github.com/LibreProject/librestatistics
+source-code: https://github.com/LibreProject/librestatistics
+issues: https://github.com/LibreProject/librestatistics/issues
+icon: snap/gui/librestatistics.svg
 grade: stable
 confinement: strict
 platforms:
@@ -32,19 +32,19 @@ platforms:
 # system-observe: processes and /proc stats · hardware-observe: sensors, GPU sysfs, battery
 # mount-observe: filesystem usage · network-observe: network counters, TCP states
 apps:
-  sysglance:
-    command: bin/sysglance
-    desktop: snap/gui/sysglance.desktop
+  librestatistics:
+    command: bin/librestatistics
+    desktop: snap/gui/librestatistics.desktop
     plugs: [system-observe, hardware-observe, mount-observe, network-observe]
   dev:
-    command: bin/sysglance-dev
+    command: bin/librestatistics-dev
     desktop: snap/gui/dev.desktop
     plugs: [system-observe, hardware-observe, mount-observe, network-observe]
   classic:
-    command: bin/sysglance-classic
+    command: bin/librestatistics-classic
     plugs: [system-observe, hardware-observe, mount-observe, network-observe]
 
 parts:
-  sysglance:
+  librestatistics:
     plugin: python
     source: .
