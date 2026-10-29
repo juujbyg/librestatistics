@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""sysmon friendly (v2.0) — a friendly, at-a-glance view of how your computer is doing.
+"""sysglance (friendly edition) — a friendly, at-a-glance view of how your computer is doing.
 
 Usage:
-    python3 sysmon_friendly.py              # live view (press Ctrl+C to close)
-    python3 sysmon_friendly.py -i 2         # update every 2 seconds
-    python3 sysmon_friendly.py --once       # show a single snapshot and exit
+    sysglance              # live view (press Ctrl+C to close)
+    sysglance -i 2         # update every 2 seconds
+    sysglance --once       # show a single snapshot and exit
 
-See also: sysmon_classic.py (v1.0) and sysmon_dev.py (developer edition).
+See also: sysglance-dev (developer edition) and sysglance-classic (v1.0).
 """
 
 import argparse
@@ -26,7 +26,8 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-VERSION = "2.0"
+from sysglance import __version__ as VERSION
+from sysglance import _compat
 HISTORY = 40
 
 
@@ -205,7 +206,7 @@ class IntelGPU(GPU):
             return float(v) if v is not None else None
 
         temp = None
-        temps = psutil.sensors_temperatures() if hasattr(psutil, "sensors_temperatures") else {}
+        temps = _compat.temperatures()
         for entry in temps.get("coretemp", []):
             if entry.label.startswith("Package"):
                 temp = entry.current  # iGPU shares the CPU package
@@ -222,7 +223,12 @@ class IntelGPU(GPU):
 
 
 def detect_gpus():
-    return NvidiaGPU.detect() + AmdGPU.detect() + IntelGPU.detect()
+    gpus = NvidiaGPU.detect() + AmdGPU.detect() + IntelGPU.detect()
+    if not gpus and _compat.IS_WIN:
+        gpus = _compat.WindowsGPU.detect(
+            {"3D": "3D", "VideoDecode": "Video", "VideoEncode": "Video",
+             "VideoProcessing": "VidEnh", "Copy": "Blit"})
+    return gpus
 
 
 
@@ -346,14 +352,31 @@ FRIENDLY_PREFIXES = [
 ]
 
 
+WIN_NAMES = {
+    "msedge": "Edge", "msedgewebview2": "Edge", "chrome": "Chrome", "firefox": "Firefox",
+    "explorer": "File Explorer", "code": "VS Code",
+    "svchost": "System", "system": "System", "registry": "System", "smss": "System",
+    "csrss": "System", "wininit": "System", "services": "System", "lsass": "System",
+    "winlogon": "System", "fontdrvhost": "System", "memory compression": "System",
+    "dwm": "Desktop", "windowsterminal": "Terminal", "conhost": "Terminal",
+    "openconsole": "Terminal", "msmpeng": "Antivirus",
+}
+
+
 def app_name(proc_name, user):
+    if _compat.IS_WIN:
+        if proc_name.lower().endswith(".exe"):
+            proc_name = proc_name[:-4]
+        friendly = WIN_NAMES.get(proc_name.lower())
+        if friendly:
+            return friendly
     if proc_name in FRIENDLY_NAMES:
         return FRIENDLY_NAMES[proc_name]
     low = proc_name.lower()
     for prefix, friendly in FRIENDLY_PREFIXES:
         if low.startswith(prefix):
             return friendly
-    if user == "root":
+    if _compat.is_system_user(user):
         return "System"
     base = proc_name.split(":")[0].split("/")[0].removesuffix("-bin").rstrip("-0123456789")
     return base[:1].upper() + base[1:]
@@ -388,13 +411,13 @@ class Dashboard:
         for k, v in (("cpu", self.cpu), ("mem", self.vm.percent), ("gpu", self.gpu_pct)):
             self.hist[k].append(v)
 
-        temps = psutil.sensors_temperatures() if hasattr(psutil, "sensors_temperatures") else {}
+        temps = _compat.temperatures()
         self.temp = next((e.current for e in temps.get("coretemp", []) if e.label.startswith("Package")),
                          next((e.current for es in temps.values() for e in es), None))
-        fans = psutil.sensors_fans() if hasattr(psutil, "sensors_fans") else {}
+        fans = _compat.fans()
         self.fan = next((f.current for fs in fans.values() for f in fs if f.current), None)
-        self.battery = psutil.sensors_battery() if hasattr(psutil, "sensors_battery") else None
-        self.disk = psutil.disk_usage("/")
+        self.battery = _compat.battery()
+        self.disk = psutil.disk_usage(_compat.root_path())
 
         now, net = time.monotonic(), psutil.net_io_counters()
         dt = max(1e-3, now - self.net_prev[0])
@@ -407,7 +430,7 @@ class Dashboard:
         apps = defaultdict(lambda: {"cpu": 0.0, "mem": 0, "shared": 0, "count": 0})
         for p in psutil.process_iter(["name", "username", "cpu_percent", "memory_info"]):
             mi = p.info["memory_info"]
-            if not mi or not mi.rss or not p.info["name"]:
+            if not mi or not mi.rss or not p.info["name"] or (_compat.IS_WIN and p.pid == 0):
                 continue
             a = apps[app_name(p.info["name"], p.info["username"])]
             shared = getattr(mi, "shared", 0)
@@ -469,7 +492,7 @@ class Dashboard:
         g = Table.grid(expand=True)
         g.add_column()
         g.add_column(justify="right")
-        left = Text(" sysmon ", style="bold #111827 on #7dd3fc")
+        left = Text(" sysglance ", style="bold #111827 on #7dd3fc")
         left.append("  ●  ", style=color)
         left.append(msg, style=f"bold {color}")
         g.add_row(left, Text(f"{datetime.now():%A %H:%M}", style=SOFT))

@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  smoke:
+    name: ${{ matrix.os }} · Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.9", "3.13"]
+    env:
+      COLUMNS: "120"
+      LINES: "35"
+      PYTHONIOENCODING: utf-8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install .
+      - name: Render every edition once
+        run: |
+          sysglance --once
+          sysglance-dev --once
+          sysglance-classic --once
+          sysglance-dev --json
+          python -m sysglance classic --once
+
+  packaging:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Validate snapcraft.yaml and debian/
+        run: |
+          python3 -c "import yaml; yaml.safe_load(open('snap/snapcraft.yaml'))"
+          python3 - <<'EOF'
+          import re
+          ver = re.search(r'__version__ = "(.*)"', open("src/sysglance/__init__.py").read())[1]
+          snap = re.search(r"^version: '(.*)'", open("snap/snapcraft.yaml").read(), re.M)[1]
+          deb = re.match(r"sysglance \((.*?)\)", open("debian/changelog").read())[1]
+          assert ver == snap == deb, f"version mismatch: package {ver}, snap {snap}, debian {deb}"
+          print("versions agree:", ver)
+          EOF

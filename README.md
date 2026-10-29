@@ -1,34 +1,61 @@
-# sysmon
+# sysglance
 
-Terminal dashboards that show your **CPU, memory and GPU** usage live. There are three editions, for different people:
+Live **CPU, memory and GPU** dashboards for the terminal, in three editions for different people:
 
-| Edition | File | For |
+| Edition | Command | For |
 |---|---|---|
-| **Friendly** (v2.0) | `sysmon_friendly.py` | Anyone. Plain language, big numbers, apps grouped by name, helpful tips. |
-| **Dev** | `sysmon_dev.py` | Developers. Dense raw metrics, per-core breakdown, disk/net/PSI, sortable process table, JSON export. |
-| **Classic** (v1.0) | `sysmon_classic.py` | The original. A clean, simple overview. |
+| **Friendly** | `sysglance` | Anyone. Plain language, big numbers, apps grouped by name, helpful tips. |
+| **Developer** | `sysglance-dev` | Developers. Dense raw metrics, per-core breakdown, disk, network and pressure stats, sortable process table, JSON export. |
+| **Classic** (v1.0) | `sysglance-classic` | The original. A clean, simple overview. |
+
+Runs on **Linux** and **Windows**.
 
 ## Install
 
+All channels install all three commands.
+
+### Snap (Ubuntu and other Linux)
 ```bash
-git clone git@github.com:juujbyg/sysmon.git
-cd sysmon
-pip install -r requirements.txt   # psutil + rich
+sudo snap install sysglance
+# allow it to read system statistics (once):
+for i in system-observe hardware-observe mount-observe network-observe; do sudo snap connect sysglance:$i; done
+```
+Snap commands are `sysglance`, `sysglance.dev` and `sysglance.classic`.
+
+### apt (Debian / Ubuntu)
+```bash
+sudo curl -fsSLo /usr/share/keyrings/sysglance.gpg https://juujbyg.github.io/sysglance/apt/sysglance.gpg
+echo "deb [signed-by=/usr/share/keyrings/sysglance.gpg] https://juujbyg.github.io/sysglance/apt stable main" \
+  | sudo tee /etc/apt/sources.list.d/sysglance.list
+sudo apt update && sudo apt install sysglance
+```
+Or download `sysglance_*_all.deb` from [Releases](https://github.com/juujbyg/sysglance/releases) and run `sudo apt install ./sysglance_*_all.deb`.
+
+### Windows
+Download from [Releases](https://github.com/juujbyg/sysglance/releases):
+- **`sysglance-*-windows-x64-setup.exe`**: installer with Start-menu shortcuts that adds the commands to PATH.
+- **`sysglance-*-windows-x64.zip`**: portable `.exe` files, no install needed.
+
+Run them in Windows Terminal for the best look. The files aren't code-signed, so SmartScreen may ask you to confirm the first time.
+
+### pip (any OS with Python 3.9+)
+```bash
+pipx install sysglance        # or: pip install sysglance
+pipx install git+https://github.com/juujbyg/sysglance   # latest from GitHub
 ```
 
-Linux only (it reads `/proc` and `/sys`). Python 3.9+.
+### From source
+```bash
+git clone https://github.com/juujbyg/sysglance.git && cd sysglance
+pip install .
+python -m sysglance [friendly|dev|classic]
+```
 
 ## Usage
 
-```bash
-python3 sysmon_friendly.py        # friendly view
-python3 sysmon_dev.py             # developer view
-python3 sysmon_classic.py         # original v1.0 view
-```
+Every edition accepts `-i SECONDS` (refresh interval) and `--once` (print one snapshot and exit).
 
-All editions accept `-i SECONDS` (refresh interval) and `--once` (print a single snapshot and exit).
-
-### Friendly
+### Friendly: `sysglance`
 
 - Status line in plain words, such as "Everything looks good" or "Memory is running low".
 - A card each for Processor, Memory and Graphics, with a big number, a word for how busy it is (Relaxed → Maxed out) and a short history graph.
@@ -36,83 +63,98 @@ All editions accept `-i SECONDS` (refresh interval) and `--once` (print a single
 - **At a glance**: battery, disk space, internet speed, how long the computer has been on, and tips.
 
 ```
- sysmon   ●  Everything looks good                                                              Thursday 12:39
+ sysglance   ●  Everything looks good                                                           Thursday 20:17
 ╭─ Processor ──────────────────────╮╭─ Memory ──────────────────────────╮╭─ Graphics ────────────────────────╮
 │                                  ││                                   ││                                   │
-│   ╺━┓┏━┓                         ││   ╻ ╻╺┓                           ││   ┏━┓                             │
-│   ┏━┛┣━┫   Comfortable           ││   ┗━┫ ┃    Comfortable            ││   ┃ ┃   Relaxed                   │
-│   ┗━╸┗━┛ %                       ││     ╹╺┻╸ %                        ││   ┗━┛ %                           │
+│   ╻ ╻╺━┓                         ││   ╻ ╻╺━┓                          ││   ┏━┓                             │
+│   ┗━┫ ━┫   Comfortable           ││   ┗━┫  ┃   Comfortable            ││   ┃ ┃   Relaxed                   │
+│     ╹╺━┛ %                       ││     ╹  ╹ %                        ││   ┗━┛ %                           │
 │                                  ││                                   ││                                   │
 │   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ││   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ││   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
 │                                  ││                                   ││                                   │
-│   4 cores  ·  Cool 56°C          ││   6.5 GB free of 11.1 GB          ││   Intel graphics                  │
-│   Fan is spinning                ││   Using disk as backup (59%)      ││   Estimated from speed            │
+│   4 cores  ·  Cool 59°C          ││   5.9 GB free of 11.1 GB          ││   Intel graphics                  │
+│   Fan is spinning                ││   Plenty of room                  ││   Estimated from speed            │
 │                                  ││                                   ││                                   │
-│   ▃  last 1s                     ││   ▄  last 1s                      ││   ▁  last 1s                      │
+│   ▄  last 1s                     ││   ▄  last 1s                      ││   ▁  last 1s                      │
 ╰──────────────────────────────────╯╰───────────────────────────────────╯╰───────────────────────────────────╯
 ╭─ What's using your computer ───────────────────────────────────╮╭─ At a glance ────────────────────────────╮
 │ App                             Processor     Memory           ││ Battery    ━━━━━━━━━━━━ 95%              │
-│ Python  ×5                      ━━━━━━  18%   ━━━━━━  181 MB   ││            Plugged in, charging          │
-│ Claude Code  ×4                 ━━━━━━   4%   ━━━━━━  1.1 GB   ││ Disk       ━━━━━━━━━━━━ 44%              │
-│ Brave  ×16                      ━━━━━━   0%   ━━━━━━  674 MB   ││            57.7 GB free of 109.0 GB      │
-│ Chrome  ×16                     ━━━━━━   0%   ━━━━━━  630 MB   ││ Internet   ↓ 496 B/s   ↑ 439 B/s         │
-│ Terminal  ×2                    ━━━━━━   4%   ━━━━━━  102 MB   ││ Turned on  6 days, 5 hours ago           │
-│ Desktop  ×33                    ━━━━━━   1%   ━━━━━━  289 MB   ││                                          │
-│ Node.js  ×10                    ━━━━━━   0%   ━━━━━━  426 MB   ││ ✦ All good. Nothing needs your           │
-│ MATLAB  ×3                      ━━━━━━   0%   ━━━━━━  116 MB   ││ attention.                               │
-│ System  ×33                     ━━━━━━   0%   ━━━━━━   96 MB   ││                                          │
-│ FreeCAD                         ━━━━━━   0%   ━━━━━━   70 MB   ││                                          │
-│ Software updates  ×4            ━━━━━━   0%   ━━━━━━   56 MB   ││                                          │
-│ Sound  ×4                       ━━━━━━   0%   ━━━━━━   54 MB   ││                                          │
+│ Brave  ×15                      ━━━━━━  31%   ━━━━━━  2.1 GB   ││            Plugged in, charging          │
+│ Python  ×4                      ━━━━━━   6%   ━━━━━━  203 MB   ││ Disk       ━━━━━━━━━━━━ 44%              │
+│ Claude Code  ×2                 ━━━━━━   1%   ━━━━━━  676 MB   ││            57.7 GB free of 109.0 GB      │
+│ Desktop  ×33                    ━━━━━━   2%   ━━━━━━  304 MB   ││ Internet   ↓ 440 B/s   ↑ 822 B/s         │
+│ Node.js  ×6                     ━━━━━━   0%   ━━━━━━  316 MB   ││ Turned on  6 days, 6 hours ago           │
+│ Terminal  ×2                    ━━━━━━   1%   ━━━━━━  119 MB   ││                                          │
+│ Protonvpn-app                   ━━━━━━   0%   ━━━━━━  239 MB   ││ ✦ All good. Nothing needs your           │
+│ Papers                          ━━━━━━   0%   ━━━━━━  194 MB   ││ attention.                               │
+│ System  ×38                     ━━━━━━   0%   ━━━━━━  168 MB   ││                                          │
+│ Files                           ━━━━━━   0%   ━━━━━━  145 MB   ││                                          │
+│ MATLAB  ×3                      ━━━━━━   0%   ━━━━━━   92 MB   ││                                          │
+│ Software updates  ×5            ━━━━━━   0%   ━━━━━━   64 MB   ││                                          │
 ╰────────────────────────────────────────────────────────────────╯╰──────────────────────────────────────────╯
- Updates every second  ·  press Ctrl+C to close  ·  v2.0
+ Updates every second  ·  press Ctrl+C to close  ·  v2.0.0
 ```
 
-### Dev
+### Developer: `sysglance-dev`
 
-- Per-core stacked user/sys/iowait/irq/steal/nice, frequency and temperature. Context switches, interrupts and forks per second. PSI pressure.
-- Full `/proc/meminfo` breakdown, swap in/out rate, page faults.
+- Per-core stacked user/sys/iowait/irq/steal/nice, frequency and temperature. Context switches, interrupts and forks per second. Linux pressure stall (PSI) stats.
+- Full memory breakdown, swap in/out rate, page faults.
 - Per-device disk throughput, IOPS and busy %. Per-interface network rates, errors and drops. TCP connections by state.
-- GPU engine busy %, all clock speeds, RC6 residency, top GPU clients.
+- GPU engine busy %, clock speeds, power-saving residency, top GPU clients.
 - Process table with PID, PPID, state, nice, threads, open files, CPU, RSS, VSZ, I/O rates and command line.
-- `--json` prints one sample of every metric; `--log FILE` appends NDJSON while running.
+- `--json` prints one sample of every metric; `--log FILE` appends NDJSON samples while running.
 
 **Keys:** `c`/`m`/`p`/`i`/`t` sort by cpu/mem/pid/io/threads · `r` reverse · `/` filter · `T` tree · `j`/`k` scroll · `space` pause · `+`/`-` interval · `q` quit
 
 ```
- sysmon-dev  my-laptop 7.0.0-38-generic up 6d05h02m load 0.98 1.21 1.57 (25%) run 2/1304 smp 141ms 12:39:04
+ sysglance-dev  my-laptop 7.0.0-38-generic up 6d06h29m load 5.22 3.15 2.73 (131%) run 2/1173 20:17:53
 ╭─  CPU 4T  ──────────────────────────────────────────────────────────────╮╭─  MEM  ───────────────────────────────────╮
-│ all ████········  34.7% u26.3 s 8.2 w 0.2 q 0.0 t 0.0 n 0.0 2441M 56°   ││ RAM  ████▍······  40.5% 4.5G/11.1G        │
-│ c0  ████········  34.7% u25.8 s 8.9 w 0.0 q 0.0 t 0.0 n 0.0 2295M 56°   ││ SWAP ██████▌····  59.2% 1.2G/2.0G         │
-│ c1  █████·······  38.4% u30.4 s 8.0 w 0.0 q 0.0 t 0.0 n 0.0 2296M 56°   ││ avail 6.6G          free  3.4G            │
-│ c2  ████········  32.8% u24.8 s 7.2 w 0.8 q 0.0 t 0.0 n 0.0 2594M 50°   ││ buf   58.1M         cache 3.5G            │
-│ c3  ████········  33.1% u25.0 s 8.1 w 0.0 q 0.0 t 0.0 n 0.0 2580M 50°   ││ shmem 821M          slab  1.1G            │
-│ ctx 2.7k/s  intr 2.5k/s  sirq 1.1k/s  fork 1.6/s  blk 0  sysc n/a       ││ activ 3.9G          inact 2.1G            │
-│ temp acpi 52° tp 52° pkg 56°  fan 0rpm                                  ││ dirty 1.6M          wback 0B              │
-│ psi some cpu 1.71/1.42  mem 0.00/0.00  io 0.01/0.32  avg10/60           ││ swap in 1 out 0 pg/s                      │
-│ psi full cpu 0.00/0.00  mem 0.00/0.00  io 0.00/0.28  avg10/60           ││ flt  min 324 maj 1 /s                     │
-│ cpu                                                          ▃   35%    ││ mem                              ▄  40%   │
-│                                                                         ││ swap                             ▅  59%   │
+│ all █████·······  40.5% u35.0 s 5.3 w 0.0 q 0.2 t 0.0 n 0.0 2211M 58°   ││ RAM  █████▏·····  46.7% 5.2G/11.1G        │
+│ c0  █████·······  37.7% u32.8 s 4.9 w 0.0 q 0.0 t 0.0 n 0.0 2124M 58°   ││ SWAP ████▊······  43.7% 896M/2.0G         │
+│ c1  ██████······  50.0% u41.8 s 8.2 w 0.0 q 0.0 t 0.0 n 0.0 2224M 58°   ││ avail 5.9G          free  1.2G            │
+│ c2  ████········  35.2% u31.1 s 4.1 w 0.0 q 0.0 t 0.0 n 0.0 2225M 55°   ││ buf   146M          cache 4.9G            │
+│ c3  █████·······  37.9% u33.9 s 4.0 w 0.0 q 0.0 t 0.0 n 0.0 2269M 55°   ││ shmem 874M          slab  1.2G            │
+│ ctx 5.9k/s  intr 4.6k/s  sirq 1.8k/s  fork 0.8/s  blk 0  sysc n/a       ││ activ 5.0G          inact 3.0G            │
+│ temp acpi 56° tp 56° pkg 58°  fan 3236rpm                               ││ dirty 2.5M          wback 0B              │
+│ psi some cpu 18.24/22.88  mem 0.00/0.00  io 0.00/0.00  avg10/60         ││ swap in 0 out 0 pg/s                      │
+│ psi full cpu 0.00/0.00  mem 0.00/0.00  io 0.00/0.00  avg10/60           ││ flt  min 4.8k maj 0 /s                    │
+│ cpu                                                          ▄   40%    ││ mem                              ▄  47%   │
+│                                                                         ││ swap                             ▄  44%   │
 ╰───────────────────────────────────────── user sys wio qirq tsteal nice ─╯╰───────────────────────────────────────────╯
 ╭─  DISK  ─────────────────────────────╮╭─  NET  ──────────────────────────────╮╭─  GPU  ──────────────────────────────╮
-│ sda    R  3.2K W    0B u  0%         ││ enp0s25  ↓  555B/s ↑  559B/s         ││ Intel iGPU card1                     │
-│    iops 1/0 r/w                      ││    pps 8/8  err 0 drop 43.8k         ││ engines n/a (no fdinfo)              │
-│ io                          █ 3.2K   ││ wlp3s0   ↓    0B/s ↑    0B/s         ││ freq act 200 cur 500 MHz             │
-│ /         ██▋···  44% 45.7G/109G     ││    pps 0/0  err 0 drop 420           ││      min 200 max 1000 bst 1000       │
-│ /boot/efi ······   1% 6.3M/511M      ││ rx                          █ 555B   ││ rc6 92.9%  temp 56°C                 │
-│                                      ││ tx                          █ 559B   ││ fdinfo: no DRM clients               │
-│                                      ││ tcp  est 11 lis 13 tw 1 cw 4         ││ gpu                           n/a    │
+│ sda    R    0B W    0B u  0%         ││ enp0s25  ↓  2.3K/s ↑  389B/s         ││ Intel iGPU card1                     │
+│    iops 0/0 r/w                      ││    pps 7/6  err 0 drop 46.4k         ││ engines n/a (no fdinfo)              │
+│ io                          ▁ 0B     ││ rx                          █ 2.3K   ││ freq act 200 cur 500 MHz             │
+│ /         ██▋···  44% 45.7G/109G     ││ tx                          █ 389B   ││      min 200 max 1000 bst 1000       │
+│ /boot/efi ······   1% 6.3M/511M      ││ tcp  est 13 lis 11 tw 2 cw 0         ││ rc6 47.9%  temp 58°C                 │
+│                                      ││                                      ││ fdinfo: no DRM clients               │
+│                                      ││                                      ││ gpu                           n/a    │
 ```
 
 ## GPU support
 
-| Vendor | Source |
-|---|---|
-| NVIDIA | `nvidia-smi` |
-| AMD | amdgpu sysfs (`gpu_busy_percent`, VRAM, hwmon) |
-| Intel | DRM fdinfo engine counters per process (no root needed) + i915 sysfs frequencies |
+| GPU | Linux | Windows |
+|---|---|---|
+| NVIDIA | `nvidia-smi` | `nvidia-smi` |
+| AMD | amdgpu sysfs (busy %, VRAM, temperature, power) | Windows GPU performance counters |
+| Intel | per-process DRM fdinfo engine counters (no root needed) + i915 clock speeds | Windows GPU performance counters |
 
-On Intel, usage comes from processes you're allowed to read. If none are readable, the friendly edition estimates usage from the GPU clock speed and says so.
+If no usage counters are readable, the friendly edition estimates GPU activity from clock speed and says so.
+
+## Project layout
+
+```
+src/sysglance/        the package: friendly.py, dev.py, classic.py
+snap/                 snapcraft.yaml + desktop launchers
+debian/               Debian packaging for the .deb / apt repository
+packaging/windows/    PyInstaller build script + Inno Setup installer
+packaging/apt/        script that builds the signed apt repository
+packaging/linux/      .desktop launchers and icon
+scripts/              bump_version.py
+.github/workflows/    CI (Linux + Windows) and the release pipeline
+```
+
+Releasing and publishing to each store: see [docs/RELEASING.md](docs/RELEASING.md).
 
 ## License
 

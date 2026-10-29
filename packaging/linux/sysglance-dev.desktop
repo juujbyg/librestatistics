@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=sysglance (developer)
+GenericName=System Monitor
+Comment=Detailed CPU, memory, disk, network, GPU and process metrics
+Exec=sysglance-dev
+Icon=sysglance
+Terminal=true
+Categories=System;Monitor;Development;
+Keywords=cpu;memory;gpu;process;htop;top;

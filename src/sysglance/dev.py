@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""sysmon_dev — developer-oriented live system monitor (TUI).
+"""sysglance dev — developer-oriented live system monitor (TUI).
 
 Usage:
-    python3 sysmon_dev.py                 # live dashboard
-    python3 sysmon_dev.py -i 0.5          # refresh every 0.5 s
-    python3 sysmon_dev.py --once          # print a single snapshot and exit
-    python3 sysmon_dev.py --json          # emit one JSON sample and exit
-    python3 sysmon_dev.py --log FILE      # append NDJSON samples while running
+    sysglance-dev                 # live dashboard
+    sysglance-dev -i 0.5          # refresh every 0.5 s
+    sysglance-dev --once          # print a single snapshot and exit
+    sysglance-dev --json          # emit one JSON sample and exit
+    sysglance-dev --log FILE            # append NDJSON samples while running
 
 Keys:  c/m/p/i/t sort by cpu/mem/pid/io/threads   r reverse   / filter (Enter ok, Esc clear)
        T tree toggle   j/k or arrows scroll   space pause   +/- interval   q quit
@@ -20,6 +20,7 @@ import glob
 import json
 import os
 import platform
+import re
 import select
 import shutil
 import signal
@@ -34,6 +35,14 @@ from rich.live import Live
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
+
+from sysglance import _compat
+from sysglance._compat import IS_WIN
+
+try:  # Windows console input (imported at module level so freezers see it)
+    import msvcrt
+except ImportError:
+    msvcrt = None
 
 HISTORY = 120
 SPARK = "▁▂▃▄▅▆▇█"
@@ -150,7 +159,7 @@ def trunc(s, n):
     return s if len(s) <= n else s[: max(0, n - 1)] + "…"
 
 
-# ── GPU backends (from sysmon_classic.py, Intel extended) ───────────────────────
+# ── GPU backends (from classic.py, Intel extended) ───────────────────────
 
 class GPU:
     name = "GPU"
@@ -347,7 +356,7 @@ class IntelGPU(GPU):
 
         temp = None
         try:
-            for entry in psutil.sensors_temperatures().get("coretemp", []):
+            for entry in _compat.temperatures().get("coretemp", []):
                 if entry.label.startswith("Package"):
                     temp = entry.current
         except Exception:
@@ -367,7 +376,12 @@ class IntelGPU(GPU):
 
 
 def detect_gpus():
-    return NvidiaGPU.detect() + AmdGPU.detect() + IntelGPU.detect()
+    gpus = NvidiaGPU.detect() + AmdGPU.detect() + IntelGPU.detect()
+    if not gpus and IS_WIN:
+        gpus = _compat.WindowsGPU.detect(
+            {"3D": "3D", "VideoDecode": "Vid", "VideoEncode": "Vid",
+             "VideoProcessing": "VEnh", "Copy": "Blt"})
+    return gpus
 
 
 # ── sampling ─────────────────────────────────────────────────────────────────
@@ -421,6 +435,15 @@ TCP_ST = {"01": "ESTABLISHED", "02": "SYN_SENT", "03": "SYN_RECV", "04": "FIN_WA
           "06": "TIME_WAIT", "07": "CLOSE", "08": "CLOSE_WAIT", "09": "LAST_ACK", "0A": "LISTEN", "0B": "CLOSING"}
 
 
+def tcp_states_psutil():
+    """Windows: count TCP sockets via psutil (works without admin there)."""
+    try:
+        c = Counter(conn.status for conn in psutil.net_connections(kind="tcp"))
+    except Exception:
+        return None
+    return dict(c)
+
+
 def tcp_states():
     """Count TCP sockets by state straight from /proc/net/tcp{,6} (cheap, no root needed)."""
     c, ok = Counter(), False
@@ -436,7 +459,7 @@ def tcp_states():
     return dict(c) if ok else None
 
 
-REAL_FS = {"ext2", "ext3", "ext4", "btrfs", "xfs", "vfat", "exfat", "ntfs", "ntfs3", "f2fs", "zfs", "fuseblk", "nfs", "nfs4"}
+REAL_FS = {"fat32", "fat", "refs", "ext2", "ext3", "ext4", "btrfs", "xfs", "vfat", "exfat", "ntfs", "ntfs3", "f2fs", "zfs", "fuseblk", "nfs", "nfs4"}
 
 
 class Sampler:
@@ -456,14 +479,17 @@ class Sampler:
         snap = {"ts": time.time(), "interval": dt}
 
         # header bits
-        la = os.getloadavg()
+        la = _compat.loadavg()
         lp = (read("/proc/loadavg") or "").split()
-        run_tot = lp[3].split("/") if len(lp) > 3 else ["0", "0"]
+        if len(lp) > 3:
+            run_tot = lp[3].split("/")
+        else:
+            run_tot = ["0", "0"] if not IS_WIN else None
         snap["sys"] = {
-            "host": platform.node(), "kernel": platform.release(),
+            "host": _compat.hostname(), "kernel": _compat.kernel(),
             "uptime_s": time.time() - psutil.boot_time(), "ncpu": NCPU,
-            "load": list(la), "load_norm": [x / NCPU for x in la],
-            "running": int(run_tot[0]), "total": int(run_tot[1]),
+            "load": list(la) if la else None, "load_norm": [x / NCPU for x in la] if la else None,
+            "running": int(run_tot[0]) if run_tot else None, "total": int(run_tot[1]) if run_tot else None,
         }
 
         # CPU
@@ -473,12 +499,18 @@ class Sampler:
         def brk(c):
             g = lambda a: getattr(c, a, 0.0) or 0.0
             d = {"user": g("user"), "nice": g("nice"), "system": g("system"), "iowait": g("iowait"),
-                 "irq": g("irq") + g("softirq"), "steal": g("steal"), "idle": g("idle")}
+                 "irq": g("irq") + g("softirq") + g("interrupt") + g("dpc"), "steal": g("steal"), "idle": g("idle")}
             d["busy"] = max(0.0, 100.0 - d["idle"] - d["iowait"] * 0)  # iowait counts as busy-ish
             d["busy"] = max(0.0, 100.0 - d["idle"])
             return d
 
         st = read_stat()
+        if IS_WIN and not st.get("ctxt"):
+            try:
+                cs = psutil.cpu_stats()
+                st.update(ctxt=cs.ctx_switches, intr=cs.interrupts, softirq=cs.soft_interrupts)
+            except Exception:
+                pass
         rates = {}
         if prev and dt:
             for k in ("ctxt", "intr", "softirq", "processes"):
@@ -488,15 +520,17 @@ class Sampler:
             freqs = [f.current for f in psutil.cpu_freq(percpu=True)]
         except Exception:
             freqs = []
+        if len(freqs) == 1 and NCPU > 1:   # Windows reports a single package-wide value
+            freqs = freqs * NCPU
         temps = {}
         try:
-            for name, ents in psutil.sensors_temperatures().items():
+            for name, ents in _compat.temperatures().items():
                 temps[name] = [{"label": e.label or name, "c": e.current} for e in ents]
         except Exception:
             pass
         fans = {}
         try:
-            for name, ents in psutil.sensors_fans().items():
+            for name, ents in _compat.fans().items():
                 fans[name] = [e.current for e in ents]
         except Exception:
             pass
@@ -519,7 +553,22 @@ class Sampler:
                     vr[k] = (vm[k] - prev["vm"][k]) / dt
         total = kb("MemTotal")
         avail = kb("MemAvailable")
-        snap["mem"] = {
+        if not mi:  # no /proc/meminfo (Windows): basic numbers from psutil, Linux-only extras are None
+            try:
+                v = psutil.virtual_memory()
+                sw = psutil.swap_memory()
+                total, avail = v.total, v.available
+                snap["mem"] = {
+                    "total": total, "available": avail, "used": total - avail, "free": v.free,
+                    "buffers": None, "cached": None, "shared": None, "active": None, "inactive": None,
+                    "dirty": None, "writeback": None, "slab": None,
+                    "swap_total": sw.total, "swap_used": sw.used,
+                    "pct": (total - avail) / total * 100 if total else 0,
+                    "swap_in_s": None, "swap_out_s": None, "minflt_s": None, "majflt_s": None,
+                }
+            except Exception:
+                pass
+        snap["mem"] = snap.get("mem") or {
             "total": total, "available": avail, "used": total - avail, "free": kb("MemFree"),
             "buffers": kb("Buffers"), "cached": kb("Cached"), "shared": kb("Shmem"),
             "active": kb("Active"), "inactive": kb("Inactive"), "dirty": kb("Dirty"),
@@ -539,7 +588,7 @@ class Sampler:
             io = {}
         blocks = set(os.listdir("/sys/block")) if os.path.isdir("/sys/block") else set()
         for name, c in io.items():
-            if name not in blocks or name.startswith(("loop", "ram", "zram", "dm-")):
+            if (name not in blocks and not IS_WIN) or name.startswith(("loop", "ram", "zram", "dm-")):
                 continue
             d = {"read_b": c.read_bytes, "write_b": c.write_bytes, "read_n": c.read_count,
                  "write_n": c.write_count, "busy_ms": getattr(c, "busy_time", None)}
@@ -555,7 +604,7 @@ class Sampler:
         try:
             seen = set()
             for part in psutil.disk_partitions(all=False):
-                if part.fstype not in REAL_FS or part.device in seen:
+                if part.fstype.lower() not in REAL_FS or part.device in seen:
                     continue
                 seen.add(part.device)
                 try:
@@ -586,7 +635,13 @@ class Sampler:
                          rx_pps=(c.packets_recv - p["rx_p"]) / dt, tx_pps=(c.packets_sent - p["tx_p"]) / dt)
             nets[name] = d
         snap["net"] = nets
-        snap["tcp"] = tcp_states()
+        if IS_WIN:   # net_connections is comparatively slow on Windows: refresh every 5th sample
+            self._tcp_tick = getattr(self, "_tcp_tick", -1) + 1
+            if self._tcp_tick % 5 == 0:
+                self._tcp = tcp_states_psutil()
+            snap["tcp"] = getattr(self, "_tcp", None)
+        else:
+            snap["tcp"] = tcp_states()
 
         # gpu
         gpus = []
@@ -621,11 +676,14 @@ class Sampler:
     def _procs(self, dt):
         attrs = ["pid", "ppid", "name", "username", "status", "nice", "num_threads", "cpu_percent",
                  "memory_info", "cmdline", "io_counters", "num_fds"]
+        attrs = [a for a in attrs if hasattr(psutil.Process, a)]   # num_fds is POSIX-only
         out, new_io = [], {}
         for p in psutil.process_iter():
             try:
                 i = p.as_dict(attrs=attrs, ad_value=None)
             except (psutil.NoSuchProcess, psutil.ZombieProcess):
+                continue
+            if IS_WIN and i["pid"] == 0:   # System Idle Process: would top every CPU sort
                 continue
             mi = i["memory_info"]
             if mi is None:
@@ -640,9 +698,11 @@ class Sampler:
                 if pv and dt:
                     rr, wr = (io.read_bytes - pv[0]) / dt, (io.write_bytes - pv[1]) / dt
             out.append({
-                "pid": i["pid"], "ppid": i["ppid"], "name": i["name"] or "?", "user": i["username"] or "?",
+                "pid": i["pid"], "ppid": i["ppid"], "name": i["name"] or "?",
+                "user": _compat.short_user(i["username"]) or "?",
                 "state": (i["status"] or "?")[:1].upper() if i["status"] != "disk-sleep" else "D",
-                "nice": i["nice"], "threads": i["num_threads"], "fds": i["num_fds"],
+                "nice": int(i["nice"]) if i["nice"] is not None else None,
+                "threads": i["num_threads"], "fds": i.get("num_fds"),
                 "cpu": i["cpu_percent"] or 0.0, "rss": rss, "vsz": vsz, "io_r": rr, "io_w": wr,
                 "cmd": " ".join(i["cmdline"]) if i["cmdline"] else f"[{i['name']}]",
             })
@@ -720,10 +780,14 @@ def cpu_lines(s, hist, w):
         cid = read(f"/sys/devices/system/cpu/cpu{i}/topology/core_id")
         ct = core_t.get(int(cid)) if cid is not None and cid.isdigit() else None
         out.append(row(f"c{i}", b, f, ct))
-    out.append(T(kv("ctx ", f"{fcount(cpu['ctx_s'])}/s  "), kv("intr ", f"{fcount(cpu['intr_s'])}/s  "),
-                 kv("sirq ", f"{fcount(cpu['softirq_s'])}/s  "), kv("fork ", f"{cpu['fork_s'] or 0:.1f}/s  "),
-                 kv("blk ", f"{cpu['blocked'] if cpu['blocked'] is not None else '-'}  "),
-                 ("sysc n/a", C_DIM)))
+    if IS_WIN:
+        out.append(T(kv("ctx ", f"{fcount(cpu['ctx_s'])}/s  "), kv("intr ", f"{fcount(cpu['intr_s'])}/s  "),
+                     kv("dpc ", f"{fcount(cpu['softirq_s'])}/s")))
+    else:
+        out.append(T(kv("ctx ", f"{fcount(cpu['ctx_s'])}/s  "), kv("intr ", f"{fcount(cpu['intr_s'])}/s  "),
+                     kv("sirq ", f"{fcount(cpu['softirq_s'])}/s  "), kv("fork ", f"{cpu['fork_s'] or 0:.1f}/s  "),
+                     kv("blk ", f"{cpu['blocked'] if cpu['blocked'] is not None else '-'}  "),
+                     ("sysc n/a", C_DIM)))
     tl = T(("temp ", C_LABEL))
     shown = False
     for name, ents in cpu["temps"].items():
@@ -754,7 +818,7 @@ def cpu_lines(s, hist, w):
                 t.append(f"/{d['avg60']:.2f}  ", style=C_DIM if d["avg60"] < 0.05 else "white")
             t.append("avg10/60", style=C_DIM)
             out.append(t)
-    else:
+    elif not IS_WIN:
         out.append(T(("psi n/a", C_DIM)))
     hw = max(10, w - 14)
     out.append(T(("cpu  ", C_LABEL), spark(hist["cpu"], hw), (f" {hist['cpu'][-1]:4.0f}%" if hist["cpu"] else "", "white")))
@@ -776,17 +840,21 @@ def mem_lines(s, hist, w):
     t.append(f" {sp:5.1f}% " if sp is not None else "   n/a ", style=lvl(sp))
     t.append(f"{fb(m['swap_used'])}/{fb(m['swap_total'])}" if m["swap_total"] else "none", style=C_LABEL)
     out.append(t)
-    items = [kv("avail ", fb(m["available"])), kv("free  ", fb(m["free"])), kv("buf   ", fb(m["buffers"])),
-             kv("cache ", fb(m["cached"])), kv("shmem ", fb(m["shared"])), kv("slab  ", fb(m["slab"])),
-             kv("activ ", fb(m["active"])), kv("inact ", fb(m["inactive"])),
-             kv("dirty ", fb(m["dirty"]), "yellow" if m["dirty"] > 64 * 2**20 else C_VAL),
-             kv("wback ", fb(m["writeback"]))]
-    out += cols(items, 3 if w >= 42 else 2, w)
-    rt = lambda v: "-" if v is None else fcount(v)
-    out.append(T(("swap ", C_LABEL), "in ", (rt(m["swap_in_s"]), C_VAL), " out ", (rt(m["swap_out_s"]), C_VAL),
-                 (" pg/s", C_DIM)))
-    out.append(T(("flt  ", C_LABEL), "min ", (rt(m["minflt_s"]), C_VAL), " maj ",
-                 (rt(m["majflt_s"]), "red" if (m["majflt_s"] or 0) > 10 else C_VAL), (" /s", C_DIM)))
+    if m["cached"] is None:   # no /proc/meminfo (Windows): only what psutil can tell
+        out += cols([kv("avail ", fb(m["available"])), kv("free  ", fb(m["free"]))], 3 if w >= 42 else 2, w)
+        out.append(T(("cache/vmstat n/a here", C_DIM)))
+    else:
+        items = [kv("avail ", fb(m["available"])), kv("free  ", fb(m["free"])), kv("buf   ", fb(m["buffers"])),
+                 kv("cache ", fb(m["cached"])), kv("shmem ", fb(m["shared"])), kv("slab  ", fb(m["slab"])),
+                 kv("activ ", fb(m["active"])), kv("inact ", fb(m["inactive"])),
+                 kv("dirty ", fb(m["dirty"]), "yellow" if m["dirty"] > 64 * 2**20 else C_VAL),
+                 kv("wback ", fb(m["writeback"]))]
+        out += cols(items, 3 if w >= 42 else 2, w)
+        rt = lambda v: "-" if v is None else fcount(v)
+        out.append(T(("swap ", C_LABEL), "in ", (rt(m["swap_in_s"]), C_VAL), " out ", (rt(m["swap_out_s"]), C_VAL),
+                     (" pg/s", C_DIM)))
+        out.append(T(("flt  ", C_LABEL), "min ", (rt(m["minflt_s"]), C_VAL), " maj ",
+                     (rt(m["majflt_s"]), "red" if (m["majflt_s"] or 0) > 10 else C_VAL), (" /s", C_DIM)))
     hw = max(10, w - 12)
     out.append(T(("mem  ", C_LABEL), spark(hist["mem"], hw), (f" {m['pct']:3.0f}%", "white")))
     out.append(T(("swap ", C_LABEL), spark(hist["swap"], hw), (f" {sp or 0:3.0f}%", "white")))
@@ -833,7 +901,7 @@ def net_lines(s, hist, w):
     out.append(T(("tx   ", C_LABEL), spark(hist["tx"], hw, None), (f" {fb(hist['tx'][-1] if hist['tx'] else 0)}", "white")))
     tcp = s["tcp"]
     if tcp is None:
-        out.append(T(("tcp  n/a (permission)", C_DIM)))
+        out.append(T(("tcp  n/a (permission)" if not IS_WIN else "tcp  n/a", C_DIM)))
     else:
         order = [("ESTABLISHED", "est"), ("LISTEN", "lis"), ("TIME_WAIT", "tw"), ("CLOSE_WAIT", "cw")]
         t = T(("tcp  ", C_LABEL))
@@ -983,7 +1051,7 @@ def proc_panel(s, ui, width, height):
     for label, key, wd, just in spec:
         t.add_column(hdr(label, key), width=wd, justify=just, no_wrap=True, overflow="ellipsis")
     t.add_column("COMMAND", ratio=1, no_wrap=True, overflow="ellipsis", header_style="bold grey70")
-    me = os.environ.get("USER", "")
+    me = os.environ.get("USER") or os.environ.get("USERNAME", "")
     for p, depth in shown:
         cpu = p["cpu"]
         cmd = p["cmd"]
@@ -991,6 +1059,10 @@ def proc_panel(s, ui, width, height):
         ct = Text(no_wrap=True, overflow="ellipsis")
         ct.append(prefix, style=C_DIM)
         exe, _, rest = cmd.partition(" ")
+        if IS_WIN:
+            m = re.match(r'^"?([A-Za-z]:\\[^"]*?\.exe)"?\s*(.*)$', cmd, re.I)
+            if m:
+                exe, rest = m.group(1).rsplit("\\", 1)[-1], m.group(2)
         ct.append(os.path.basename(exe) if exe.startswith("/") else exe, style="bold white")
         ct.append(" " + rest if rest else "", style=C_LABEL)
         st = p["state"]
@@ -1011,18 +1083,21 @@ def proc_panel(s, ui, width, height):
 
 def header_line(s, ui, width):
     sy = s["sys"]
-    t = T((" sysmon-dev ", "bold black on cyan"), (" ", ""), (trunc(sy["host"], 22), "bold"))
+    t = T((" sysglance-dev ", "bold black on cyan"), (" ", ""), (trunc(sy["host"], 22), "bold"))
     clock = f" {time.strftime('%H:%M:%S')}"
     extras = [
         (f" {sy['kernel']}", C_LABEL),
         (f" up {fmt_up(sy['uptime_s'])}", C_LABEL),
     ]
-    load = T((" load ", C_LABEL))
-    for v, n in zip(sy["load"], sy["load_norm"]):
-        load.append(f"{v:.2f} ", style=lvl(n * 100))
-    load.append(f"({sy['load_norm'][0] * 100:.0f}%)", style=C_DIM)
-    extras += [load, (f" run {sy['running']}/{sy['total']}", C_LABEL), (f" smp {s['latency_ms']:.0f}ms", C_LABEL),
-               (f" rnd {ui.render_ms:.0f}ms", C_LABEL)]
+    if sy["load"]:
+        load = T((" load ", C_LABEL))
+        for v, n in zip(sy["load"], sy["load_norm"]):
+            load.append(f"{v:.2f} ", style=lvl(n * 100))
+        load.append(f"({sy['load_norm'][0] * 100:.0f}%)", style=C_DIM)
+        extras.append(load)
+    if sy["running"] is not None:
+        extras.append((f" run {sy['running']}/{sy['total']}", C_LABEL))
+    extras += [(f" smp {s['latency_ms']:.0f}ms", C_LABEL), (f" rnd {ui.render_ms:.0f}ms", C_LABEL)]
     for e in extras:
         piece = T(e)
         if t.cell_len + piece.cell_len + len(clock) + (8 if ui.paused else 0) <= width:
@@ -1085,11 +1160,44 @@ def render(s, hist, ui, console):
 # ── terminal input ───────────────────────────────────────────────────────────
 
 class RawTTY:
+    WIN_KEYS = {"H": "UP", "P": "DOWN", "I": "PGUP", "Q": "PGDN"}
+
     def __init__(self):
-        self.fd = sys.stdin.fileno()
+        self.win = IS_WIN and msvcrt is not None
+        try:
+            self.fd = sys.stdin.fileno()
+        except (OSError, ValueError, AttributeError):
+            self.fd = None
         self.old = None
 
+    def _win_keys(self, timeout):
+        # Non-blocking poll: kbhit() + getwch(); arrows/PgUp/PgDn arrive as a '\x00' or '\xe0' prefix + code.
+        deadline = time.monotonic() + max(0.0, timeout)
+        while True:
+            out = []
+            try:
+                while msvcrt.kbhit():
+                    ch = msvcrt.getwch()
+                    if ch in ("\x00", "\xe0"):
+                        k = self.WIN_KEYS.get(msvcrt.getwch())
+                        if k:
+                            out.append(k)
+                    elif ch == "\x1b":
+                        out.append("ESC")
+                    else:
+                        out.append(ch)
+            except OSError:
+                pass
+            if out:
+                return out
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                return []
+            time.sleep(min(0.02, remaining))
+
     def __enter__(self):
+        if self.win or IS_WIN or self.fd is None:
+            return self
         import termios, tty
         self.termios = termios
         try:
@@ -1100,10 +1208,12 @@ class RawTTY:
         return self
 
     def __exit__(self, *exc):
-        if self.old is not None:
+        if self.old is not None and not IS_WIN:
             self.termios.tcsetattr(self.fd, self.termios.TCSADRAIN, self.old)
 
     def keys(self, timeout):
+        if self.win:
+            return self._win_keys(timeout)
         if self.old is None:
             time.sleep(timeout)
             return []
@@ -1204,7 +1314,10 @@ def main():
         return
 
     logf = open(args.log, "a", buffering=1) if args.log else None
-    signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(SystemExit(143)))
+    try:
+        signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(SystemExit(143)))
+    except (AttributeError, ValueError, OSError):
+        pass
     time.sleep(0.3)
     try:
         with RawTTY() as tty_in, Live(console=console, screen=True, auto_refresh=False) as live:

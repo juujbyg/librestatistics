@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sysglance"
+dynamic = ["version"]
+description = "Live CPU, memory and GPU dashboards for the terminal: friendly, developer and classic editions"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "juujbyg" }]
+requires-python = ">=3.9"
+dependencies = ["psutil>=5.9", "rich>=13"]
+keywords = ["monitor", "cpu", "gpu", "memory", "tui", "dashboard", "system"]
+classifiers = [
+    "Environment :: Console",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Topic :: System :: Monitoring",
+]
+
+[project.urls]
+Homepage = "https://github.com/juujbyg/sysglance"
+Issues = "https://github.com/juujbyg/sysglance/issues"
+
+[project.scripts]
+sysglance = "sysglance.friendly:main"
+sysglance-dev = "sysglance.dev:main"
+sysglance-classic = "sysglance.classic:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "sysglance.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
-"""sysmon classic (v1.0) — a clean live terminal dashboard for CPU, RAM and GPU usage.
+"""sysglance classic (v1.0) — a clean live terminal dashboard for CPU, RAM and GPU usage.
 
 Usage:
-    python3 sysmon_classic.py              # live dashboard (Ctrl+C to quit)
-    python3 sysmon_classic.py -i 0.5       # refresh every 0.5 s
-    python3 sysmon_classic.py --once       # print a single snapshot and exit
+    sysglance-classic              # live dashboard (Ctrl+C to quit)
+    sysglance-classic -i 0.5       # refresh every 0.5 s
+    sysglance-classic --once       # print a single snapshot and exit
 
 GPU support:
     NVIDIA  via nvidia-smi
     AMD     via amdgpu sysfs (gpu_busy_percent, VRAM)
     Intel   via DRM fdinfo engine counters + sysfs frequency
+    Windows any vendor via PDH "GPU Engine" counters (when no NVIDIA GPU)
 """
 
 import argparse
@@ -28,6 +29,8 @@ from rich.live import Live
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
+
+from sysglance import _compat
 
 HISTORY = 50
 SPARK = "▁▂▃▄▅▆▇█"
@@ -263,7 +266,7 @@ class IntelGPU(GPU):
             return float(v) if v is not None else None
 
         temp = None
-        temps = psutil.sensors_temperatures() if hasattr(psutil, "sensors_temperatures") else {}
+        temps = _compat.temperatures()
         for entry in temps.get("coretemp", []):
             if entry.label.startswith("Package"):
                 temp = entry.current  # iGPU shares the CPU package
@@ -280,7 +283,10 @@ class IntelGPU(GPU):
 
 
 def detect_gpus():
-    return NvidiaGPU.detect() + AmdGPU.detect() + IntelGPU.detect()
+    gpus = NvidiaGPU.detect() + AmdGPU.detect() + IntelGPU.detect()
+    if not gpus and _compat.IS_WIN:
+        gpus = _compat.WindowsGPU.detect()
+    return gpus
 
 
 # ── dashboard ────────────────────────────────────────────────────────────────
@@ -312,7 +318,7 @@ class Monitor:
         procs = []
         for p in psutil.process_iter(["pid", "name", "username", "cpu_percent", "memory_info"]):
             info = p.info
-            if info["memory_info"] is None:
+            if info["memory_info"] is None or (_compat.IS_WIN and info["pid"] == 0):
                 continue
             procs.append(info)
         self.procs = sorted(procs, key=lambda x: (x["cpu_percent"] or 0, x["memory_info"].rss),
@@ -325,22 +331,26 @@ class Monitor:
         up = datetime.now() - boot
         h, rem = divmod(int(up.total_seconds()), 3600)
         t = Text()
-        t.append(" sysmon ", style="bold black on cyan")
-        t.append(f"  {os.uname().nodename}", style="bold")
+        t.append(" sysglance classic ", style="bold black on cyan")
+        t.append(f"  {_compat.hostname()}", style="bold")
         t.append(f"  ·  up {h // 24}d {h % 24}h {rem // 60}m", style="grey62")
-        la = os.getloadavg()
-        t.append(f"  ·  load {la[0]:.2f} {la[1]:.2f} {la[2]:.2f}", style="grey62")
+        la = _compat.loadavg()
+        if la:
+            t.append(f"  ·  load {la[0]:.2f} {la[1]:.2f} {la[2]:.2f}", style="grey62")
         t.append(f"  ·  {datetime.now():%H:%M:%S}", style="grey62")
         return t
 
     def cpu_panel(self):
-        freq = psutil.cpu_freq()
+        try:
+            freq = psutil.cpu_freq()
+        except Exception:
+            freq = None
         detail = f"{freq.current / 1000:.2f} GHz" if freq else ""
-        temps = psutil.sensors_temperatures() if hasattr(psutil, "sensors_temperatures") else {}
+        temps = _compat.temperatures()
         for e in temps.get("coretemp", []):
             if e.label.startswith("Package"):
                 detail += f"  {e.current:.0f}°C"
-        fans = psutil.sensors_fans() if hasattr(psutil, "sensors_fans") else {}
+        fans = _compat.fans()
         for entries in fans.values():
             for f in entries:
                 if f.current:
@@ -371,8 +381,11 @@ class Monitor:
         g.add_column(style="grey62")
         g.add_column(justify="right")
         g.add_row("available", fmt_bytes(vm.available))
-        g.add_row("cached / buffers", fmt_bytes(getattr(vm, "cached", 0) + getattr(vm, "buffers", 0)))
-        g.add_row("shared", fmt_bytes(getattr(vm, "shared", 0)))
+        if hasattr(vm, "cached"):  # Linux/BSD only
+            g.add_row("cached / buffers", fmt_bytes(getattr(vm, "cached", 0) + getattr(vm, "buffers", 0)))
+            g.add_row("shared", fmt_bytes(getattr(vm, "shared", 0)))
+        else:
+            g.add_row("free", fmt_bytes(vm.free))
         rows += [g, Text(), Text("history ", style="grey50") + sparkline(self.ram_hist)]
         return Panel(Group(*rows), title="[bold]Memory[/]", border_style="magenta",
                      title_align="left")
@@ -426,7 +439,7 @@ class Monitor:
         ncpu = psutil.cpu_count() or 1
         for p in self.procs:
             cpu = (p["cpu_percent"] or 0) / ncpu
-            t.add_row(str(p["pid"]), p["name"] or "?", p["username"] or "?",
+            t.add_row(str(p["pid"]), p["name"] or "?", _compat.short_user(p["username"]) or "?",
                       Text(f"{cpu:.1f}", style=level_color(cpu * 2)),
                       fmt_bytes(p["memory_info"].rss))
         return Panel(t, title="[bold]Top processes[/]", border_style="blue", title_align="left")

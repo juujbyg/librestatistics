@@ -1,0 +1,24 @@
+Source: sysglance
+Section: utils
+Priority: optional
+Maintainer: juujbyg <juujbyg@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13),
+               dh-python,
+               pybuild-plugin-pyproject,
+               python3-all,
+               python3-setuptools
+Standards-Version: 4.6.2
+Homepage: https://github.com/juujbyg/sysglance
+Rules-Requires-Root: no
+
+Package: sysglance
+Architecture: all
+Depends: ${misc:Depends}, ${python3:Depends}, python3-psutil, python3-rich
+Description: live CPU, memory and GPU dashboards for the terminal
+ sysglance shows how busy your computer is, live, in the terminal, in three
+ editions:
+  - sysglance: friendly edition with plain language, apps grouped by name
+    and helpful tips
+  - sysglance-dev: developer edition with per-core breakdown, disk, network,
+    pressure stalls, GPU engines and a sortable process table
+  - sysglance-classic: the original v1.0 overview
