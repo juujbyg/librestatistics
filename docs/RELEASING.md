@@ -45,12 +45,12 @@ Nothing to set up.
 3. Add the variable **`PUBLISH_APT`** = `true`.
 4. After the first release has run, set **Settings → Pages → Source** to *Deploy from a branch*, branch `gh-pages`, folder `/`.
 
-The repository is served at `https://libreproject.github.io/librestatistics/apt`. Every release adds its `.deb` to `pool/`, so older versions stay installable.
+The repository is served at `https://juujbyg.github.io/librestatistics/apt`. Every release adds its `.deb` to `pool/`, so older versions stay installable.
 
-A Launchpad PPA is an alternative. It requires uploading signed *source* packages (`debuild -S`, then `dput ppa:libreproject/librestatistics`) from a machine with your Launchpad GPG key, and it is not automated here.
+A Launchpad PPA is an alternative. It requires uploading signed *source* packages (`debuild -S`, then `dput ppa:juujbyg/librestatistics`) from a machine with your Launchpad GPG key, and it is not automated here.
 
 ### PyPI (`pip install librestatistics`, also works on Windows/macOS)
-1. On pypi.org, add a **pending trusted publisher**: project `librestatistics`, owner `LibreProject`, repo `librestatistics`, workflow `release.yml`, environment `pypi`.
+1. On pypi.org, add a **pending trusted publisher**: project `librestatistics`, owner `juujbyg`, repo `librestatistics`, workflow `release.yml`, environment `pypi`.
 2. In GitHub, create the environment **`pypi`** (Settings → Environments).
 3. Add the variable **`PUBLISH_PYPI`** = `true`.
 

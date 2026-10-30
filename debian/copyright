@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: librestatistics
-Source: https://github.com/LibreProject/librestatistics
+Source: https://github.com/juujbyg/librestatistics
 
 Files: *
 Copyright: 2026 LibreStatistics contributors

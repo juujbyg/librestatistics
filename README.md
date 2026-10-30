@@ -1,7 +1,7 @@
 # LibreStatistics
 
-[![CI](https://github.com/LibreProject/librestatistics/actions/workflows/ci.yml/badge.svg)](https://github.com/LibreProject/librestatistics/actions/workflows/ci.yml)
-[![Latest release](https://img.shields.io/github/v/release/LibreProject/librestatistics)](https://github.com/LibreProject/librestatistics/releases/latest)
+[![CI](https://github.com/juujbyg/librestatistics/actions/workflows/ci.yml/badge.svg)](https://github.com/juujbyg/librestatistics/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/juujbyg/librestatistics)](https://github.com/juujbyg/librestatistics/releases/latest)
 [![License: GPL-2.0-or-later](https://img.shields.io/badge/license-GPL--2.0--or--later-blue)](LICENSE)
 
 Part of the **LibreProject** family.
@@ -30,15 +30,15 @@ Snap commands are `librestatistics`, `librestatistics.dev` and `librestatistics.
 
 ### apt (Debian / Ubuntu)
 ```bash
-sudo curl -fsSLo /usr/share/keyrings/librestatistics.gpg https://libreproject.github.io/librestatistics/apt/librestatistics.gpg
-echo "deb [signed-by=/usr/share/keyrings/librestatistics.gpg] https://libreproject.github.io/librestatistics/apt stable main" \
+sudo curl -fsSLo /usr/share/keyrings/librestatistics.gpg https://juujbyg.github.io/librestatistics/apt/librestatistics.gpg
+echo "deb [signed-by=/usr/share/keyrings/librestatistics.gpg] https://juujbyg.github.io/librestatistics/apt stable main" \
   | sudo tee /etc/apt/sources.list.d/librestatistics.list
 sudo apt update && sudo apt install librestatistics
 ```
-Or download `librestatistics_*_all.deb` from [Releases](https://github.com/LibreProject/librestatistics/releases) and run `sudo apt install ./librestatistics_*_all.deb`.
+Or download `librestatistics_*_all.deb` from [Releases](https://github.com/juujbyg/librestatistics/releases) and run `sudo apt install ./librestatistics_*_all.deb`.
 
 ### Windows
-Download from [Releases](https://github.com/LibreProject/librestatistics/releases):
+Download from [Releases](https://github.com/juujbyg/librestatistics/releases):
 - **`librestatistics-*-windows-x64-setup.exe`**: installer with Start-menu shortcuts that adds the commands to PATH.
 - **`librestatistics-*-windows-x64.zip`**: portable `.exe` files, no install needed.
 
@@ -47,12 +47,12 @@ Run them in Windows Terminal for the best look. The files aren't code-signed, so
 ### pip (any OS with Python 3.9+)
 ```bash
 pipx install librestatistics        # or: pip install librestatistics
-pipx install git+https://github.com/LibreProject/librestatistics   # latest from GitHub
+pipx install git+https://github.com/juujbyg/librestatistics   # latest from GitHub
 ```
 
 ### From source
 ```bash
-git clone https://github.com/LibreProject/librestatistics.git && cd librestatistics
+git clone https://github.com/juujbyg/librestatistics.git && cd librestatistics
 pip install .
 python -m librestatistics [friendly|dev|classic]
 ```

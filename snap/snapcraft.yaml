@@ -19,9 +19,9 @@ description: |
     sudo snap connect librestatistics:mount-observe
     sudo snap connect librestatistics:network-observe
 license: GPL-2.0-or-later
-website: https://github.com/LibreProject/librestatistics
-source-code: https://github.com/LibreProject/librestatistics
-issues: https://github.com/LibreProject/librestatistics/issues
+website: https://github.com/juujbyg/librestatistics
+source-code: https://github.com/juujbyg/librestatistics
+issues: https://github.com/juujbyg/librestatistics/issues
 icon: snap/gui/librestatistics.svg
 grade: stable
 confinement: strict
