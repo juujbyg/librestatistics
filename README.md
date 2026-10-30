@@ -4,7 +4,7 @@
 [![Latest release](https://img.shields.io/github/v/release/LibreProject/librestatistics)](https://github.com/LibreProject/librestatistics/releases/latest)
 [![License: GPL-2.0-or-later](https://img.shields.io/badge/license-GPL--2.0--or--later-blue)](LICENSE)
 
-Part of the **LibreProject** family (alongside LibrePrint).
+Part of the **LibreProject** family.
 
 Live **CPU, memory and GPU** dashboards for the terminal, in three editions for different people:
 
